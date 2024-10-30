@@ -7,7 +7,7 @@ from ..views.table import main_table
 import reflex as rx
 
 
-@template(route="/table", title="Table", on_load=TableState.load_entries)
+@template(route="/table", title="Posiciones", on_load=TableState.load_entries)
 def table() -> rx.Component:
     """The table page.
 

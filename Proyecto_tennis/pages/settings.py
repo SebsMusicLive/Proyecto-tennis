@@ -8,7 +8,7 @@ from ..views.radius_picker import radius_picker
 from ..views.scaling_picker import scaling_picker
 
 
-@template(route="/settings", title="Settings")
+@template(route="/settings", title="Configuración")
 def settings() -> rx.Component:
     """The settings page.
 
