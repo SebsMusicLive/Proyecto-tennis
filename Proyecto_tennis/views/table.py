@@ -26,10 +26,11 @@ def _show_item(item: Item, index: int) -> rx.Component:
         rx.color("accent", 3),
     )
     return rx.table.row(
-        rx.table.row_header_cell(item.name),
-        rx.table.cell(f"${item.payment}"),
-        rx.table.cell(item.date),
-        rx.table.cell(status_badge(item.status)),
+        rx.table.row_header_cell(item.ranking),
+        rx.table.cell(item.jugador),
+        rx.table.cell(item.puntos),
+        rx.table.cell(item.puntosAPerder),
+        rx.table.cell(item.siguiente),
         style={"_hover": {"bg": hover_color}, "bg": bg_color},
         align="center",
     )
@@ -123,12 +124,14 @@ def main_table() -> rx.Component:
                 ),
                 rx.select(
                     [
-                        "name",
-                        "payment",
-                        "date",
-                        "status",
+                        "ranking",
+                        "jugador",
+                        "puntos",
+                        "torneosJugados",
+                        "puntosAPerder",
+                        "siguiente",
                     ],
-                    placeholder="Sort By: Name",
+                    placeholder="ordenar por: Jugador",
                     size="3",
                     on_change=TableState.set_sort_value,
                 ),
@@ -171,10 +174,12 @@ def main_table() -> rx.Component:
         rx.table.root(
             rx.table.header(
                 rx.table.row(
-                    _header_cell("Name", "user"),
-                    _header_cell("Payment", "dollar-sign"),
-                    _header_cell("Date", "calendar"),
-                    _header_cell("Status", "notebook-pen"),
+                    _header_cell("Ranking", "move-vertical"),
+                    _header_cell("Jugador", "user"),
+                    _header_cell("Puntos", "grid-3x3"),
+                    _header_cell("Torneos Jugados", "joystick"),
+                    _header_cell("Puntos a Perder", "circle-off"),
+                    _header_cell("Siguiente Mejor", "circle-arrow-right"),
                 ),
             ),
             rx.table.body(

@@ -6,10 +6,12 @@ import csv
 class Item(rx.Base):
     """The item class."""
 
-    name: str
-    payment: float
-    date: str
-    status: str
+    ranking: str
+    jugador: str
+    puntos: int
+    torneosJugados: int
+    puntosAPerder: int
+    siguiente: str
 
 
 class TableState(rx.State):
@@ -31,7 +33,7 @@ class TableState(rx.State):
 
         # Filter items based on selected item
         if self.sort_value:
-            if self.sort_value in ["payment"]:
+            if self.sort_value in ["ranking"]:
                 items = sorted(
                     items,
                     key=lambda item: float(getattr(item, self.sort_value)),
@@ -53,10 +55,12 @@ class TableState(rx.State):
                 if any(
                     search_value in str(getattr(item, attr)).lower()
                     for attr in [
-                        "name",
-                        "payment",
-                        "date",
-                        "status",
+                        "ranking",
+                        "jugador",
+                        "puntos",
+                        "torneosJugados",
+                        "puntosAPerder",
+                        "siguiente",
                     ]
                 )
             ]

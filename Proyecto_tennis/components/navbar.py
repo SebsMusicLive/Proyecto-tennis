@@ -21,16 +21,16 @@ def menu_item(text: str, url: str) -> rx.Component:
     """
     # Whether the item is active.
     active = (rx.State.router.page.path == url.lower()) | (
-        (rx.State.router.page.path == "/") & text == "Overview"
+        (rx.State.router.page.path == "/") & text == "Estadisticas"
     )
 
     return rx.link(
         rx.hstack(
             rx.match(
                 text,
-                ("Overview", menu_item_icon("home")),
-                ("Table", menu_item_icon("table-2")),
-                ("Settings", menu_item_icon("settings")),
+                ("Estadisticas", menu_item_icon("trending-up")),
+                ("Pocisiones", menu_item_icon("move-vertical")),
+                ("Configuracion", menu_item_icon("settings")),
                 menu_item_icon("layout-dashboard"),
             ),
             rx.text(text, size="4", weight="regular"),
@@ -85,7 +85,7 @@ def navbar_footer() -> rx.Component:
             underline="none",
         ),
         rx.link(
-            rx.text("Gi tHub", size="3"),
+            rx.text("GitHub", size="3"),
             href="https://reflex.dev/blog/",
             color_scheme="gray",
             underline="none",
