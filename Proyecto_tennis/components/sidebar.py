@@ -33,14 +33,14 @@ def sidebar_footer() -> rx.Component:
     """
     return rx.hstack(
         rx.link(
-            rx.text("Documentación", size="2"),
-            href="https://reflex.dev/docs/getting-started/introduction/",
+            rx.text("Link A", size="2"),
+            href="https://www.flashscore.com/tennis/",
             color_scheme="gray",
             underline="none",
         ),
         rx.link(
-            rx.text("GitHub", size="2"),
-            href="https://github.com/SebsMusicLive/Proyecto-tennis",
+            rx.text("Link B", size="2"),
+            href="",
             color_scheme="gray",
             underline="none",
         ),
