@@ -90,7 +90,7 @@ def _pagination_view() -> rx.Component:
                 spacing="2",
                 justify="end",
             ),
-            spacing="5",
+            spacing="6",
             margin_top="1em",
             align="center",
             width="100%",
