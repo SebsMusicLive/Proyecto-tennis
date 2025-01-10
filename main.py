@@ -126,4 +126,4 @@ df = pd.DataFrame({
 
 print(df)
 
-df.to_excel(nombre_completo, index = False)
+df.to_csv(nombre_completo, index = False)
