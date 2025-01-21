@@ -26,11 +26,12 @@ def _show_item(item: Item, index: int) -> rx.Component:
         rx.color("accent", 3),
     )
     return rx.table.row(
-        rx.table.row_header_cell(item.ranking),
+        rx.table.row_header_cell(item.id),
         rx.table.cell(item.jugador),
-        rx.table.cell(item.puntos),
-        rx.table.cell(item.puntosAPerder),
-        rx.table.cell(item.siguiente),
+        rx.table.cell(item.primer_saque),
+        rx.table.cell(item.puntos_primer),
+        rx.table.cell(item.puntos_segundo),
+        rx.table.cell(item.juegos_saque),
         style={"_hover": {"bg": hover_color}, "bg": bg_color},
         align="center",
     )
@@ -124,12 +125,13 @@ def main_table() -> rx.Component:
                 ),
                 rx.select(
                     [
-                        "ranking",
+                        "id",
                         "jugador",
-                        "puntos",
-                        "torneosJugados",
-                        "puntosAPerder",
-                        "siguiente",
+                        "efectividad",
+                        "primer_saque",
+                        "puntos_primer",
+                        "puntos_segundo",
+                        "juegos_saque",
                     ],
                     placeholder="ordenar por: Jugador",
                     size="3",
@@ -176,10 +178,11 @@ def main_table() -> rx.Component:
                 rx.table.row(
                     _header_cell("Ranking", "move-vertical"),
                     _header_cell("Jugador", "user"),
-                    _header_cell("Puntos", "grid-3x3"),
-                    _header_cell("Torneos Jugados", "joystick"),
-                    _header_cell("Puntos a Perder", "circle-off"),
-                    _header_cell("Siguiente Mejor", "circle-arrow-right"),
+                    _header_cell("Efectividad", "grid-3x3"),
+                    _header_cell("% Primer Saque", "joystick"),
+                    _header_cell("% Puntos Primer Saque", "circle-off"),
+                    _header_cell("% Puntos Segundo Saque", "circle-arrow-right"),
+                    _header_cell("% Juegos Saque", "circle-off"),
                 ),
             ),
             rx.table.body(
