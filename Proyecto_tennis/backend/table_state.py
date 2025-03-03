@@ -8,11 +8,10 @@ class Item(rx.Base):
 
     id: str
     jugador: str
-    efectividad: float
+    efectividad: str
     primer_saque: str
     puntos_primer: str
     puntos_segundo: str
-    juegos_saque: str
 
 
 class TableState(rx.State):
@@ -62,7 +61,6 @@ class TableState(rx.State):
                         "primer_saque",
                         "puntos_primer",
                         "puntos_segundo",
-                        "juegos_saque",
                     ]
                 )
             ]
