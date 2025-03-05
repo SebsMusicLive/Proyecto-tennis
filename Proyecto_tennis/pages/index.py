@@ -2,6 +2,7 @@
 
 import reflex as rx
 from .. import styles
+from ..backend.table_state import TableState, Item
 from ..templates import template
 from ..views.stats_cards import stats_cards
 from ..views.charts import (
@@ -50,7 +51,7 @@ def index() -> rx.Component:
         The UI for the overview page.
     """
     return rx.vstack(
-        rx.heading(f"Bienvenido", size="5"),
+        rx.heading(f"BIENVENIDO A PAGINA DE ESTADISTICAS TENNIS EN VIVO", size="8",align="left"),
         stats_cards(),
         # card(
         #     rx.hstack(
@@ -74,7 +75,53 @@ def index() -> rx.Component:
         #     ),
         # ),
         rx.grid(
+            card(rx.hstack(
+                    rx.input(
+                        rx.input.slot(rx.icon("search")),
+                        rx.input.slot(
+                                rx.icon("x"),
+                                justify="end",
+                                cursor="pointer",
+                        ),
+                        placeholder="Espacio para jugador numero 1",
+
+                    ),   
+                ),
+            ),card(rx.hstack(
+                    rx.input(
+                        rx.input.slot(rx.icon("search")),
+                        rx.input.slot(
+                            rx.icon("x"),
+                            justify="end",
+                            cursor="pointer",
+                        ),
+                        placeholder="Espacio para jugador numero 2",
+                   
+
+
+                    ),
+           
+                ), 
+                
+            ),
             card(
+                rx.hstack(
+                    rx.icon("globe", size=20),
+                    rx.text("Mejores Jugadores", size="4", weight="medium"),
+                    align="center",
+                    spacing="2",
+                    margin_bottom="2.5em",
+                ),
+                rx.vstack(
+                    adquisition(),
+                ),
+            ),
+           
+          
+            
+            card(
+                
+
                 rx.hstack(
                     rx.hstack(
                         rx.icon("user-round-search", size=20),
@@ -89,18 +136,9 @@ def index() -> rx.Component:
                 ),
                 pie_chart(),
             ),
-            card(
-                rx.hstack(
-                    rx.icon("globe", size=20),
-                    rx.text("Mejores Jugadores", size="4", weight="medium"),
-                    align="center",
-                    spacing="2",
-                    margin_bottom="2.5em",
-                ),
-                rx.vstack(
-                    adquisition(),
-                ),
-            ),
+
+            
+            
             gap="1rem",
             grid_template_columns=[
                 "1fr",
@@ -109,8 +147,8 @@ def index() -> rx.Component:
                 "repeat(2, 1fr)",
                 "repeat(2, 1fr)",
             ],
-            width="100%",
-        ),
+           
         spacing="8",
         width="100%",
+    ),
     )
