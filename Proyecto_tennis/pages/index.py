@@ -17,7 +17,8 @@ from ..views.charts import (
 from ..views.adquisition_view import adquisition
 from ..components.notification import notification
 from ..components.card import card
-import datetime
+from ..backend.live_state import LiveMatchState
+from datetime import datetime
 
 
 # def _time_data() -> rx.Component:
@@ -42,8 +43,33 @@ import datetime
 #         spacing="4",
 #     )
 
+def render_match_card(match: dict) -> rx.Component:
+    home = match.get("HOME_NAME", "Jugador 1")
+    away = match.get("AWAY_NAME", "Jugador 2")
+    round_name = match.get("ROUND", "Ronda desconocida")
+    timestamp = match.get("START_TIME")
+    date_str = datetime.utcfromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M') if timestamp else "Sin hora"
+    image_url = match.get("HOME_IMAGES", [None])[0]
 
-@template(route="/", title="Estadísticas", on_load=StatsState.randomize_data)
+    return rx.box(
+        rx.hstack(
+            rx.image(src=image_url, width="50px", height="50px", border_radius="full") if image_url else rx.icon("user"),
+            rx.vstack(
+                rx.text(f"{home} vs {away}", weight="bold"),
+                rx.text(f"Ronda: {round_name}"),
+                rx.text(f"Inicio: {date_str}"),
+            ),
+            align="start",
+            spacing="4",
+        ),
+        padding="1em",
+        border="1px solid #ccc",
+        border_radius="lg",
+        box_shadow="md",
+        width="100%",
+    )
+
+@template(route="/", title="Estadísticas", on_load=LiveMatchState.load_matches)
 def index() -> rx.Component:
     """The overview page.
 
@@ -136,9 +162,18 @@ def index() -> rx.Component:
                 ),
                 pie_chart(),
             ),
-
-            
-            
+            card(
+                rx.hstack(
+                    rx.icon("tennis-ball", size=20),
+                    rx.text("Partidos en Vivo", size="4", weight="medium"),
+                    align="center",
+                    spacing="2",
+                ),
+                rx.foreach(
+                    LiveMatchState.matches,
+                    lambda match: render_match_card(match),
+                ),
+            ),
             gap="1rem",
             grid_template_columns=[
                 "1fr",
@@ -147,8 +182,7 @@ def index() -> rx.Component:
                 "repeat(2, 1fr)",
                 "repeat(2, 1fr)",
             ],
-           
-        spacing="8",
-        width="100%",
-    ),
+            spacing="8",
+            width="100%",
+        ),
     )
