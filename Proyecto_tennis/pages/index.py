@@ -17,7 +17,7 @@ from ..views.charts import (
 from ..views.adquisition_view import adquisition
 from ..components.notification import notification
 from ..components.card import card
-import datetime
+from ..backend.live_state import LiveMatchState
 
 
 # def _time_data() -> rx.Component:
@@ -43,7 +43,7 @@ import datetime
 #     )
 
 
-@template(route="/", title="Estadísticas", on_load=StatsState.randomize_data)
+@template(route="/", title="Estadísticas", on_load=LiveMatchState.load_matches)
 def index() -> rx.Component:
     """The overview page.
 
@@ -136,9 +136,18 @@ def index() -> rx.Component:
                 ),
                 pie_chart(),
             ),
-
-            
-            
+            card(
+                rx.hstack(
+                    rx.icon("tennis-ball", size=20),
+                    rx.text("Partidos en Vivo", size="4", weight="medium"),
+                    align="center",
+                    spacing="2",
+                ),
+                rx.foreach(
+                    LiveMatchState.matches,
+                    lambda match: rx.text(f"{match['EHOME']} vs {match['EAWAY']}"),
+                ),
+            ),
             gap="1rem",
             grid_template_columns=[
                 "1fr",
@@ -147,8 +156,7 @@ def index() -> rx.Component:
                 "repeat(2, 1fr)",
                 "repeat(2, 1fr)",
             ],
-           
-        spacing="8",
-        width="100%",
-    ),
+            spacing="8",
+            width="100%",
+        ),
     )

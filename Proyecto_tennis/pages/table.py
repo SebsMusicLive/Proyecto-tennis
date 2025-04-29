@@ -15,7 +15,7 @@ def table() -> rx.Component:
         The UI for the table page.
     """
     return rx.vstack(
-        rx.heading("Table", size="5"),
+        rx.heading("HISTORICO JUGADORES", size="5"),
         main_table(),
         spacing="8",
         width="100%",
