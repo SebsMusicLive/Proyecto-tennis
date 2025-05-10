@@ -18,46 +18,26 @@ from ..views.adquisition_view import adquisition
 from ..components.notification import notification
 from ..components.card import card
 from ..backend.live_state import LiveMatchState
-from datetime import datetime
 
 
-# def _time_data() -> rx.Component:
-#     return rx.hstack(
-#         rx.tooltip(
-#             rx.icon("info", size=20),
-#             content=f"{(datetime.datetime.now() - datetime.timedelta(days=30)).strftime('%b %d, %Y')} - {datetime.datetime.now().strftime('%b %d, %Y')}",
-#         ),
-#         rx.text("Last 30 days", size="4", weight="medium"),
-#         align="center",
-#         spacing="2",
-#         display=["none", "none", "flex"],
-#     )
-
-
-# def tab_content_header() -> rx.Component:
-#     return rx.hstack(
-#         _time_data(),
-#         area_toggle(),
-#         align="center",
-#         width="100%",
-#         spacing="4",
-#     )
-
-def render_match_card(match: dict) -> rx.Component:
-    home = match.get("HOME_NAME", "Jugador 1")
-    away = match.get("AWAY_NAME", "Jugador 2")
-    round_name = match.get("ROUND", "Ronda desconocida")
-    timestamp = match.get("START_TIME")
-    date_str = datetime.utcfromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M') if timestamp else "Sin hora"
-    image_url = match.get("HOME_IMAGES", [None])[0]
+def render_match_card(match: rx.Var) -> rx.Component:
+    home = match.HOME_NAME
+    away = match.AWAY_NAME
+    round_name = match.ROUND
+    date_display = match.FORMATTED_TIME  # Usar formato legible aquí si quieres
+    image_list = match.HOME_IMAGES
 
     return rx.box(
         rx.hstack(
-            rx.image(src=image_url, width="50px", height="50px", border_radius="full") if image_url else rx.icon("user"),
+            rx.cond(
+                (image_list != None) & (image_list.length() > 0),
+                rx.image(src=image_list[0], width="50px", height="50px", border_radius="full"),
+                rx.icon("circle-user")
+            ),
             rx.vstack(
                 rx.text(f"{home} vs {away}", weight="bold"),
                 rx.text(f"Ronda: {round_name}"),
-                rx.text(f"Inicio: {date_str}"),
+                rx.text(f"Inicio: {date_display}"),
             ),
             align="start",
             spacing="4",
@@ -69,67 +49,39 @@ def render_match_card(match: dict) -> rx.Component:
         width="100%",
     )
 
+
 @template(route="/", title="Estadísticas", on_load=LiveMatchState.load_matches)
 def index() -> rx.Component:
-    """The overview page.
-
-    Returns:
-        The UI for the overview page.
-    """
     return rx.vstack(
-        rx.heading(f"BIENVENIDO A PAGINA DE ESTADISTICAS TENNIS EN VIVO", size="8",align="left"),
+        rx.heading("BIENVENIDO A PAGINA DE ESTADISTICAS TENNIS EN VIVO", size="8", align="left"),
         stats_cards(),
-        # card(
-        #     rx.hstack(
-        #          tab_content_header(),
-        #         rx.segmented_control.root(
-        #             rx.segmented_control.item("Users", value="users"),
-        #             rx.segmented_control.item("Revenue", value="revenue"),
-        #             rx.segmented_control.item("Orders", value="orders"),
-        #             margin_bottom="1.5em",
-        #             default_value="users",
-        #             on_change=StatsState.set_selected_tab,
-        #         ),
-        #         width="100%",
-        #         justify="between",
-        #     ),
-        #     rx.match(
-        #         StatsState.selected_tab,
-        #         ("users", users_chart()),
-        #         ("revenue", revenue_chart()),
-        #         ("orders", orders_chart()),
-        #     ),
-        # ),
+
         rx.grid(
+            # Input jugador 1
             card(rx.hstack(
-                    rx.input(
-                        rx.input.slot(rx.icon("search")),
-                        rx.input.slot(
-                                rx.icon("x"),
-                                justify="end",
-                                cursor="pointer",
-                        ),
-                        placeholder="Espacio para jugador numero 1",
-
-                    ),   
-                ),
-            ),card(rx.hstack(
-                    rx.input(
-                        rx.input.slot(rx.icon("search")),
-                        rx.input.slot(
-                            rx.icon("x"),
-                            justify="end",
-                            cursor="pointer",
-                        ),
-                        placeholder="Espacio para jugador numero 2",
-                   
-
-
+                rx.input(
+                    rx.input.slot(rx.icon("search")),
+                    rx.input.slot(
+                        rx.icon("x"),
+                        justify="end",
+                        cursor="pointer",
                     ),
-           
-                ), 
-                
-            ),
+                    placeholder="Espacio para jugador numero 1",
+                ),
+            )),
+            # Input jugador 2
+            card(rx.hstack(
+                rx.input(
+                    rx.input.slot(rx.icon("search")),
+                    rx.input.slot(
+                        rx.icon("x"),
+                        justify="end",
+                        cursor="pointer",
+                    ),
+                    placeholder="Espacio para jugador numero 2",
+                ),
+            )),
+            # Mejores jugadores
             card(
                 rx.hstack(
                     rx.icon("globe", size=20),
@@ -138,16 +90,10 @@ def index() -> rx.Component:
                     spacing="2",
                     margin_bottom="2.5em",
                 ),
-                rx.vstack(
-                    adquisition(),
-                ),
+                rx.vstack(adquisition()),
             ),
-           
-          
-            
+            # Estadísticas jugadores
             card(
-                
-
                 rx.hstack(
                     rx.hstack(
                         rx.icon("user-round-search", size=20),
@@ -155,24 +101,22 @@ def index() -> rx.Component:
                         align="center",
                         spacing="2",
                     ),
-                    # timeframe_select(),
                     align="center",
                     width="100%",
                     justify="between",
                 ),
                 pie_chart(),
             ),
+            # Partidos en vivo
             card(
                 rx.hstack(
-                    rx.icon("tennis-ball", size=20),
+                    rx.icon("circle-help", size=20),
                     rx.text("Partidos en Vivo", size="4", weight="medium"),
                     align="center",
                     spacing="2",
                 ),
-                rx.foreach(
-                    LiveMatchState.matches,
-                    lambda match: render_match_card(match),
-                ),
+                rx.foreach(LiveMatchState.matches, render_match_card),
+
             ),
             gap="1rem",
             grid_template_columns=[
