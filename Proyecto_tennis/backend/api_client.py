@@ -12,9 +12,9 @@ def get_live_matches():
     url = "https://flashlive-sports.p.rapidapi.com/v1/events/list"
     params = {
         "sport_id": "2",                # tenis
-        "locale": "es_ES",             # o "en_INT"
-        "timezone": "-5",  # ejemplo para Colombia
-        "indent_days": "1"             # días a mostrar (puede ser 1 o más)
+        "locale": "es_ES",
+        "timezone": "-5",
+        "indent_days": "0"              # <-- importante: usar 0 para el día actual
     }
 
     try:
@@ -22,8 +22,14 @@ def get_live_matches():
         print("🔗 URL:", response.url)
         print("📦 Status code:", response.status_code)
         print("📨 Response text:", response.text)
-        response.raise_for_status()
-        return response.json()
+        
+        data = response.json()
+
+        # 🔍 Agrega estas dos líneas:
+        print("🔎 Tipo de respuesta:", type(data))
+        print("🔎 Contenido de la respuesta:", data)
+
+        return data
     except Exception as e:
         print("❌ Error al consumir la API:", e)
         return {"events": []}

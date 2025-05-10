@@ -4,7 +4,7 @@ import reflex as rx
 import datetime
 from ..backend.api_client import get_live_matches
 
-# ✅ Definir un modelo para un partido
+# Modelo para un partido
 class Match(rx.Base):
     HOME_NAME: str
     AWAY_NAME: str
@@ -18,7 +18,19 @@ class LiveMatchState(rx.State):
 
     def load_matches(self):
         data = get_live_matches()
-        raw_matches = data.get("events", [])
+        raw_matches = []
+
+        # ✅ Recorremos los torneos y extraemos los partidos desde EVENTS
+        if isinstance(data, list):
+            for tournament in data:
+                events = tournament.get("EVENTS", [])
+                raw_matches.extend(events)
+        elif isinstance(data, dict) and "DATA" in data:
+            for tournament in data["DATA"]:
+                events = tournament.get("EVENTS", [])
+                raw_matches.extend(events)
+        else:
+            print("⚠️ Estructura inesperada de datos:", type(data), data)
 
         parsed_matches = []
 
@@ -39,7 +51,8 @@ class LiveMatchState(rx.State):
                         HOME_IMAGES=match.get("HOME_IMAGES", []),
                     )
                 )
-            except Exception:
+            except Exception as e:
+                print(f"❌ Error al procesar el partido: {e}")
                 continue
 
         self.matches = parsed_matches
