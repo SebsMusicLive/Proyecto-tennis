@@ -57,56 +57,6 @@ def index() -> rx.Component:
         stats_cards(),
 
         rx.grid(
-            # Input jugador 1
-            card(rx.hstack(
-                rx.input(
-                    rx.input.slot(rx.icon("search")),
-                    rx.input.slot(
-                        rx.icon("x"),
-                        justify="end",
-                        cursor="pointer",
-                    ),
-                    placeholder="Espacio para jugador numero 1",
-                ),
-            )),
-            # Input jugador 2
-            card(rx.hstack(
-                rx.input(
-                    rx.input.slot(rx.icon("search")),
-                    rx.input.slot(
-                        rx.icon("x"),
-                        justify="end",
-                        cursor="pointer",
-                    ),
-                    placeholder="Espacio para jugador numero 2",
-                ),
-            )),
-            # Mejores jugadores
-            card(
-                rx.hstack(
-                    rx.icon("globe", size=20),
-                    rx.text("Mejores Jugadores", size="4", weight="medium"),
-                    align="center",
-                    spacing="2",
-                    margin_bottom="2.5em",
-                ),
-                rx.vstack(adquisition()),
-            ),
-            # Estadísticas jugadores
-            card(
-                rx.hstack(
-                    rx.hstack(
-                        rx.icon("user-round-search", size=20),
-                        rx.text("Estadísticas Jugadores", size="4", weight="medium"),
-                        align="center",
-                        spacing="2",
-                    ),
-                    align="center",
-                    width="100%",
-                    justify="between",
-                ),
-                pie_chart(),
-            ),
             # Partidos en vivo
             card(
                 rx.hstack(
