@@ -54,7 +54,7 @@ def render_match_card(match: rx.Var) -> rx.Component:
 def index() -> rx.Component:
     return rx.vstack(
         rx.heading("BIENVENIDO A PAGINA DE ESTADISTICAS TENNIS EN VIVO", size="8", align="left"),
-        stats_cards(),
+        #stats_cards(),
 
         rx.grid(
             # Partidos en vivo
