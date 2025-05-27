@@ -1,7 +1,7 @@
 import httpx
 
 RAPIDAPI_KEY = "ea3487d304mshc57f788e9c05a9cp141100jsn121ec8ce9040"
-RAPIDAPI_HOST = "flashlive-sports.p.rapidapi.com"
+RAPIDAPI_HOST = "tennisapi1.p.rapidapi.com"
 
 HEADERS = {
     "X-RapidAPI-Key": RAPIDAPI_KEY,
@@ -9,7 +9,7 @@ HEADERS = {
 }
 
 def get_live_matches():
-    url = "https://flashlive-sports.p.rapidapi.com/v1/events/list"
+    url = "https://tennisapi1.p.rapidapi.com/api/tennis/rankings/wta/live"
     params = {
         "sport_id": "2",                # tenis
         "locale": "es_ES",
