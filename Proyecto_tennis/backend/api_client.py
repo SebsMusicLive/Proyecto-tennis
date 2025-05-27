@@ -1,6 +1,9 @@
-import httpx
+# backend/api_client.py
 
-RAPIDAPI_KEY = "ea3487d304mshc57f788e9c05a9cp141100jsn121ec8ce9040"
+import httpx
+import os
+
+RAPIDAPI_KEY = os.getenv("RAPIDAPI_KEY", "ea3487d304mshc57f788e9c05a9cp141100jsn121ec8ce9040")
 RAPIDAPI_HOST = "tennisapi1.p.rapidapi.com"
 
 HEADERS = {
@@ -9,27 +12,18 @@ HEADERS = {
 }
 
 def get_live_matches():
-    url = "https://tennisapi1.p.rapidapi.com/api/tennis/rankings/wta/live"
-    params = {
-        "sport_id": "2",                # tenis
-        "locale": "es_ES",
-        "timezone": "-5",
-        "indent_days": "0"              # <-- importante: usar 0 para el día actual
-    }
-
+    url = "https://tennisapi1.p.rapidapi.com/api/tennis/events/live"
     try:
-        response = httpx.get(url, headers=HEADERS, params=params)
-        print("🔗 URL:", response.url)
-        print("📦 Status code:", response.status_code)
-        print("📨 Response text:", response.text)
-        
+        response = httpx.get(url, headers=HEADERS)
+        response.raise_for_status()
+
         data = response.json()
 
-        # 🔍 Agrega estas dos líneas:
-        print("🔎 Tipo de respuesta:", type(data))
-        print("🔎 Contenido de la respuesta:", data)
+        # 🟢 Verifica el tipo de estructura de respuesta (esto ayuda al depurado)
+        print("📦 Tipo de respuesta:", type(data))
+        print("📨 Claves de la respuesta:", data.keys())
 
         return data
     except Exception as e:
         print("❌ Error al consumir la API:", e)
-        return {"events": []}
+        return {}

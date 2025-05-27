@@ -24,7 +24,7 @@ def render_match_card(match: rx.Var) -> rx.Component:
     home = match.HOME_NAME
     away = match.AWAY_NAME
     round_name = match.ROUND
-    date_display = match.FORMATTED_TIME  # Usar formato legible aquí si quieres
+    date_display = match.FORMATTED_TIME
     image_list = match.HOME_IMAGES
 
     return rx.box(
@@ -48,6 +48,7 @@ def render_match_card(match: rx.Var) -> rx.Component:
         box_shadow="md",
         width="100%",
     )
+
 
 
 @template(route="/", title="Estadísticas", on_load=LiveMatchState.load_matches)
