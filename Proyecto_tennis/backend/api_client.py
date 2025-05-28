@@ -2,6 +2,7 @@
 
 import httpx
 import os
+import json  # Solo necesario si quieres imprimir el JSON
 
 RAPIDAPI_KEY = os.getenv("RAPIDAPI_KEY", "ea3487d304mshc57f788e9c05a9cp141100jsn121ec8ce9040")
 RAPIDAPI_HOST = "tennisapi1.p.rapidapi.com"
@@ -19,9 +20,8 @@ def get_live_matches():
 
         data = response.json()
 
-        # 🟢 Verifica el tipo de estructura de respuesta (esto ayuda al depurado)
-        print("📦 Tipo de respuesta:", type(data))
-        print("📨 Claves de la respuesta:", data.keys())
+        # 🟡 DEBUG opcional: imprime toda la respuesta
+        # print(json.dumps(data, indent=2))
 
         return data
     except Exception as e:
