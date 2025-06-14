@@ -18,6 +18,11 @@ sidebar_content_width = "16em"
 max_width = "1480px"
 color_box_size = ["2.25rem", "2.25rem", "2.5rem"]
 
+# 🚨 AÑADIDO: Define PAGE_PADDING_X y PAGE_PADDING_Y aquí
+# Puedes ajustar estos valores según tus preferencias de diseño.
+# Los arrays permiten un padding responsivo para diferentes tamaños de pantalla.
+PAGE_PADDING_X = ["1em", "2em", "4em", "6em"] # Ejemplo: 1em en móviles, 2em en tablets, 4em en escritorios pequeños, 6em en grandes
+PAGE_PADDING_Y = ["1em", "2em"]             # Ejemplo: 1em en móviles, 2em en otros
 
 template_page_style = {
     "padding_top": ["1em", "1em", "2em"],
@@ -92,10 +97,9 @@ color_picker_style = {
 
 base_stylesheets = [
     "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap",
-    "styles.css",
+    "styles.css", # Asegúrate de que este archivo styles.css exista en la carpeta assets de tu proyecto
 ]
 
 base_style = {
     "font_family": "Inter",
 }
-
