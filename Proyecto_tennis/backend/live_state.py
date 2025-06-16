@@ -3,8 +3,9 @@
 import reflex as rx
 import datetime
 import json
-from ..backend.api_client import get_live_matches, get_head_to_head_stats 
+from ..backend.api_client import get_live_matches # Solo necesitamos get_live_matches ahora
 
+# Modelo para representar un partido en vivo
 class Match(rx.Base):
     HOME_NAME: str
     AWAY_NAME: str
@@ -22,22 +23,34 @@ class Match(rx.Base):
 
     HOME_ID: str = "" 
     AWAY_ID: str = ""
-    CURRENT_SET: int = 0
-    HOME_SCORE_CURRENT_SET: int = 0
-    AWAY_SCORE_CURRENT_SET: int = 0
+    CURRENT_SET: int = 0 
+    HOME_SCORE_CURRENT_SET: int = 0 
+    AWAY_SCORE_CURRENT_SET: int = 0 
     GAME_STATE_HOME_SCORE: int = 0 
-    GAME_STATE_AWAY_SCORE: int = 0
+    GAME_STATE_AWAY_SCORE: int = 0 
     SERVING_PLAYER: str = "" 
-
-    HEAD_TO_HEAD_WINS_HOME: int = 0
-    HEAD_TO_HEAD_WINS_AWAY: int = 0
-    HEAD_TO_HEAD_TOTAL_MATCHES: int = 0
-    WIN_PROBABILITY_HOME: float = 0.0 
-    WIN_PROBABILITY_AWAY: float = 0.0
     
-    # NUEVOS CAMPOS: Porcentajes calculados y formateados como cadenas
-    HOME_WIN_PERCENTAGE_H2H: str = "N/A"
-    AWAY_WIN_PERCENTAGE_H2H: str = "N/A"
+    HOME_ACES: int = 0
+    AWAY_ACES: int = 0
+    HOME_BREAKPOINTS_WON: int = 0
+    AWAY_BREAKPOINTS_WON: int = 0
+    HOME_DOUBLE_FAULTS: int = 0
+    AWAY_DOUBLE_FAULTS: int = 0
+    HOME_FIRST_SERVE_SUCCESSFUL: int = 0
+    AWAY_FIRST_SERVE_SUCCESSFUL: int = 0
+    HOME_SERVICE_POINTS_WON: int = 0 
+    AWAY_SERVICE_POINTS_WON: int = 0
+
+    # 🚨 NUEVOS CAMPOS PARA PORCENTAJES BASADOS EN ESTADÍSTICAS DEL PARTIDO ACTUAL
+    HOME_FIRST_SERVE_WIN_PERCENTAGE: str = "0.0%" # % de puntos ganados con el 1er saque
+    AWAY_FIRST_SERVE_WIN_PERCENTAGE: str = "0.0%"
+
+    HOME_SERVICE_POINTS_WIN_PERCENTAGE: str = "0.0%" # % de puntos de servicio ganados (total)
+    AWAY_SERVICE_POINTS_WIN_PERCENTAGE: str = "0.0%"
+
+    HOME_BREAKPOINT_CONVERSION_PERCENTAGE: str = "0.0%" # % de puntos de quiebre convertidos
+    AWAY_BREAKPOINT_CONVERSION_PERCENTAGE: str = "0.0%"
+
 
 class LiveMatchState(rx.State):
     matches: list[Match] = []
@@ -45,7 +58,7 @@ class LiveMatchState(rx.State):
     def load_matches(self):
         data = get_live_matches() 
 
-        raw_matches = data.get("summaries", [])
+        raw_matches = data.get("summaries", []) 
 
         parsed_matches = []
 
@@ -54,20 +67,14 @@ class LiveMatchState(rx.State):
             self.matches = []
             return
 
-        # 🟡 DEBUG: Imprimir la estructura del primer partido que se procesa
-        # print("\n🔍 Estructura del primer resumen de partido (datos crudos de Sportradar):")
-        # if raw_matches: 
-        #     print(json.dumps(raw_matches[0], indent=2)) 
-        # print("----------------------------------------------------\n")
-
         try:
-            for match_summary in raw_matches:
-
+            for match_summary in raw_matches: 
                 sport_event = match_summary.get("sport_event", {})
                 sport_event_status = match_summary.get("sport_event_status", {})
                 sport_event_context = sport_event.get("sport_event_context", {}) 
+                statistics = match_summary.get("statistics", {}).get("totals", {}).get("competitors", []) 
 
-                competitors = sport_event.get("competitors", [])
+                competitors = sport_event.get("competitors", []) 
                 
                 home_data = next((c for c in competitors if c.get("qualifier") == "home"), {})
                 away_data = next((c for c in competitors if c.get("qualifier") == "away"), {})
@@ -81,8 +88,38 @@ class LiveMatchState(rx.State):
                 home_id = home_data.get("id", "")
                 away_id = away_data.get("id", "")
 
+                home_stats = next((s.get("statistics", {}) for s in statistics if s.get("id") == home_id), {})
+                away_stats = next((s.get("statistics", {}) for s in statistics if s.get("id") == away_id), {})
+
+                home_aces = home_stats.get("aces", 0)
+                away_aces = away_stats.get("aces", 0)
+                home_breakpoints_won = home_stats.get("breakpoints_won", 0)
+                away_breakpoints_won = away_stats.get("breakpoints_won", 0)
+                home_double_faults = home_stats.get("double_faults", 0)
+                away_double_faults = away_stats.get("double_faults", 0)
+                home_first_serve_successful = home_stats.get("first_serve_successful", 0)
+                away_first_serve_successful = away_stats.get("first_serve_successful", 0)
+                home_service_points_won = home_stats.get("service_points_won", 0)
+                away_service_points_won = away_stats.get("service_points_won", 0)
+                
+                # Necesitamos los puntos de primer saque ganados y los totales para el %
+                home_first_serve_points_won = home_stats.get("first_serve_points_won", 0)
+                away_first_serve_points_won = away_stats.get("first_serve_points_won", 0)
+
+                # Necesitamos los puntos de servicio perdidos para el % de puntos de servicio ganados
+                home_service_points_lost = home_stats.get("service_points_lost", 0)
+                away_service_points_lost = away_stats.get("service_points_lost", 0)
+
+                # Necesitamos los breakpoints totales para el % de quiebres convertidos
+                home_total_breakpoints = home_stats.get("total_breakpoints", 0)
+                away_total_breakpoints = away_stats.get("total_breakpoints", 0)
+
+
                 round_data = sport_event_context.get("round", {})
-                round_name = round_data.get("name", "Sin ronda") 
+                round_name = round_data.get("name", "Sin ronda") if isinstance(round_data, dict) else str(round_data)
+                if not round_name and "number" in round_data: 
+                    round_name = f"Ronda {round_data['number']}"
+
 
                 tournament_name = sport_event_context.get("competition", {}).get("name", "Torneo Desconocido")
                 tournament_year = str(sport_event_context.get("season", {}).get("year", datetime.datetime.now().year))
@@ -112,43 +149,41 @@ class LiveMatchState(rx.State):
                 home_score_current_set = sport_event_status.get("home_score", 0) 
                 away_score_current_set = sport_event_status.get("away_score", 0) 
 
-                h2h_wins_home = 0
-                h2h_wins_away = 0
-                h2h_total_matches = 0
-                home_win_percentage_h2h_str = "N/A"
-                away_win_percentage_h2h_str = "N/A"
+                # 🚨 ELIMINAMOS LA LÓGICA H2H YA QUE NO TENEMOS ACCESO DIRECTO
+                # Y NOS ENFOCAMOS EN LOS PORCENTAJES DEL PARTIDO ACTUAL
+                home_win_percentage_h2h_str = "N/A" # Lo mantenemos como N/A o lo eliminamos si no se va a usar
+                away_win_percentage_h2h_str = "N/A" # Lo mantenemos como N/A o lo eliminamos si no se va a usar
 
-                if home_id and away_id:
-                    h2h_data = get_head_to_head_stats(home_id, away_id)
-                    if h2h_data:
-                        if "head_to_head" in h2h_data:
-                            h2h_summary = h2h_data["head_to_head"]
-                            if h2h_summary.get("home_competitor_id") == home_id:
-                                h2h_wins_home = h2h_summary.get("home_wins", 0)
-                                h2h_wins_away = h2h_summary.get("away_wins", 0)
-                            elif h2h_summary.get("home_competitor_id") == away_id: 
-                                h2h_wins_home = h2h_summary.get("away_wins", 0)
-                                h2h_wins_away = h2h_summary.get("home_wins", 0)
-                            h2h_total_matches = h2h_summary.get("total_meetings", h2h_wins_home + h2h_wins_away)
-                        elif "summaries" in h2h_data: 
-                            for prev_match_summary in h2h_data["summaries"]:
-                                if "sport_event_status" in prev_match_summary and "winner_id" in prev_match_summary["sport_event_status"]:
-                                    winner_id = prev_match_summary["sport_event_status"]["winner_id"]
-                                    if winner_id == home_id:
-                                        h2h_wins_home += 1
-                                    elif winner_id == away_id:
-                                        h2h_wins_away += 1
-                                    h2h_total_matches += 1
-                        else:
-                            print("⚠️ Estructura inesperada en la respuesta H2H. Imprime `h2h_data` para depurar.")
+                # --- CÁLCULO DE LOS PORCENTAJES DEL PARTIDO ACTUAL ---
+                home_first_serve_win_pct = "0.0%"
+                if home_first_serve_successful > 0:
+                    home_first_serve_win_pct = f"{(home_first_serve_points_won / home_first_serve_successful * 100):.1f}%"
 
-                # CALCULAR PORCENTAJES AQUÍ Y ALMACENAR COMO STRING
-                if h2h_total_matches > 0:
-                    home_win_percentage = (h2h_wins_home / h2h_total_matches) * 100
-                    away_win_percentage = (h2h_wins_away / h2h_total_matches) * 100
-                    home_win_percentage_h2h_str = f"{home_win_percentage:.1f}"
-                    away_win_percentage_h2h_str = f"{away_win_percentage:.1f}"
+                away_first_serve_win_pct = "0.0%"
+                if away_first_serve_successful > 0:
+                    away_first_serve_win_pct = f"{(away_first_serve_points_won / away_first_serve_successful * 100):.1f}%"
 
+
+                home_service_points_win_pct = "0.0%"
+                total_home_service_points = home_service_points_won + home_service_points_lost
+                if total_home_service_points > 0:
+                    home_service_points_win_pct = f"{(home_service_points_won / total_home_service_points * 100):.1f}%"
+                
+                away_service_points_win_pct = "0.0%"
+                total_away_service_points = away_service_points_won + away_service_points_lost
+                if total_away_service_points > 0:
+                    away_service_points_win_pct = f"{(away_service_points_won / total_away_service_points * 100):.1f}%"
+
+
+                home_breakpoint_conversion_pct = "0.0%"
+                if home_total_breakpoints > 0:
+                    home_breakpoint_conversion_pct = f"{(home_breakpoints_won / home_total_breakpoints * 100):.1f}%"
+                
+                away_breakpoint_conversion_pct = "0.0%"
+                if away_total_breakpoints > 0:
+                    away_breakpoint_conversion_pct = f"{(away_breakpoints_won / away_total_breakpoints * 100):.1f}%"
+
+                # ----------------------------------------------------
 
                 parsed_matches.append(
                     Match(
@@ -172,100 +207,122 @@ class LiveMatchState(rx.State):
                         GAME_STATE_HOME_SCORE=home_score_current_game,
                         GAME_STATE_AWAY_SCORE=away_score_current_game,
                         SERVING_PLAYER=serving_player,
-                        HEAD_TO_HEAD_WINS_HOME=h2h_wins_home,
-                        HEAD_TO_HEAD_WINS_AWAY=h2h_wins_away,
-                        HEAD_TO_HEAD_TOTAL_MATCHES=h2h_total_matches,
-                        HOME_WIN_PERCENTAGE_H2H=home_win_percentage_h2h_str,
-                        AWAY_WIN_PERCENTAGE_H2H=away_win_percentage_h2h_str
+                        # Campos H2H ahora pueden ser siempre "N/A" si no hay API H2H
+                        HEAD_TO_HEAD_WINS_HOME=0, 
+                        HEAD_TO_HEAD_WINS_AWAY=0,
+                        HEAD_TO_HEAD_TOTAL_MATCHES=0,
+                        HOME_WIN_PERCENTAGE_H2H=home_win_percentage_h2h_str, # Será N/A
+                        AWAY_WIN_PERCENTAGE_H2H=away_win_percentage_h2h_str, # Será N/A
+                        
+                        HOME_ACES=home_aces,
+                        AWAY_ACES=away_aces,
+                        HOME_BREAKPOINTS_WON=home_breakpoints_won,
+                        AWAY_BREAKPOINTS_WON=away_breakpoints_won,
+                        HOME_DOUBLE_FAULTS=home_double_faults,
+                        AWAY_DOUBLE_FAULTS=away_double_faults,
+                        HOME_FIRST_SERVE_SUCCESSFUL=home_first_serve_successful,
+                        AWAY_FIRST_SERVE_SUCCESSFUL=away_first_serve_successful,
+                        HOME_SERVICE_POINTS_WON=home_service_points_won,
+                        AWAY_SERVICE_POINTS_WON=away_service_points_won,
+
+                        # Asignar los nuevos porcentajes calculados
+                        HOME_FIRST_SERVE_WIN_PERCENTAGE=home_first_serve_win_pct,
+                        AWAY_FIRST_SERVE_WIN_PERCENTAGE=away_first_serve_win_pct,
+                        HOME_SERVICE_POINTS_WIN_PERCENTAGE=home_service_points_win_pct,
+                        AWAY_SERVICE_POINTS_WIN_PERCENTAGE=away_service_points_win_pct,
+                        HOME_BREAKPOINT_CONVERSION_PERCENTAGE=home_breakpoint_conversion_pct,
+                        AWAY_BREAKPOINT_CONVERSION_PERCENTAGE=away_breakpoint_conversion_pct
                     )
                 )
         except Exception as e:
             print(f"❌ Error al procesar un resumen del partido de Sportradar: {e}")
-
+            
         self.matches = parsed_matches
 
-# --- Bloque de Prueba (main execution block, for isolated testing) ---
+# --- Bloque de Prueba (solo para ejecutar live_state.py directamente y probar) ---
+# Si usas este bloque, asegúrate de que api_client.py no intente importar get_head_to_head_stats
+# ya que lo hemos quitado. O ajusta los mocks para solo usar get_live_matches.
 if __name__ == "__main__":
-    # Mock para get_live_matches (ejemplo de respuesta real para summaries.json)
+    # Mock para get_live_matches (ejemplo de respuesta de Sportradar summaries.json)
     def get_live_matches_sportradar_mock():
         return {
-            "summaries": [ 
-                {
-                    "sport_event": {
-                        "id": "sr:sport_event:61155415",
-                        "start_time": "2025-06-14T02:15:00+00:00",
-                        "start_time_confirmed": True,
-                        "sport_event_context": {
-                            "sport": {"id": "sr:sport:5", "name": "Tennis"},
-                            "category": {"id": "sr:category:2516", "name": "UTR Men"},
-                            "competition": {"id": "sr:competition:47205", "name": "UTR PTT Sanmin District Men 02", "type": "singles", "gender": "men"},
-                            "season": {"id": "sr:season:131053", "name": "UTR Manchester M01 2025", "start_date": "2025-06-08", "end_date": "2025-06-14", "year": "2025", "competition_id": "sr:competition:47205"},
-                            "stage": {"order": 2, "type": "cup", "phase": "stage_1_playoff", "start_date": "2025-06-13", "end_date": "2025-06-14", "year": "2025"},
-                            "round": {"name": "semifinal"},
-                            "groups": [{"id": "sr:cup:181943", "name": "2025 Sanmin District Men 02, 4th Place Playoffs"}],
-                            "mode": {"best_of": 3}
-                        },
-                        "coverage": {
-                            "type": "sport_event",
-                            "sport_event_properties": {"enhanced_stats": False, "scores": "live", "detailed_serve_outcomes": True, "play_by_play": True}
-                        },
-                        "competitors": [
-                            {"id": "sr:competitor:1256463", "name": "Minami, Sota", "country": "Japan", "country_code": "JPN", "abbreviation": "MIN", "qualifier": "home"},
-                            {"id": "sr:competitor:686611", "name": "Walia, Drona", "country": "India", "country_code": "IND", "abbreviation": "WAL", "qualifier": "away"}
-                        ],
-                        "venue": {"id": "sr:venue:82203", "name": "Yang-Ming Tennis Center - Court 7", "city_name": "Kaohsiung", "country_name": "Chinese Taipei", "country_code": "TPE", "timezone": "Asia/Taipei"},
-                        "estimated": False
-                    },
-                    "sport_event_status": {
-                        "status": "live",
-                        "match_status": "2nd_set",
-                        "home_score": 1,
-                        "away_score": 0,
-                        "period_scores": [
-                            {"home_score": 6, "away_score": 2, "type": "set", "number": 1},
-                            {"home_score": 4, "away_score": 1, "type": "set", "number": 2}
-                        ],
-                        "game_state": {
-                            "home_score": 0, "away_score": 0, "serving": "home", "last_point_result": "server_winner", "tie_break": False
-                        }
-                    },
-                    "statistics": {
-                        "totals": {
-                            "competitors": [
-                                {"id": "sr:competitor:1256463", "name": "Minami, Sota", "abbreviation": "MIN", "qualifier": "home", "statistics": {"aces": 1, "breakpoints_won": 6, "double_faults": 4, "first_serve_points_won": 15, "first_serve_successful": 25, "games_won": 10, "max_games_in_a_row": 6, "max_points_in_a_row": 6, "points_won": 57, "second_serve_points_won": 9, "second_serve_successful": 13, "service_games_won": 4, "service_points_lost": 18, "service_points_won": 24, "tiebreaks_won": 0, "total_breakpoints": 9}},
-                                {"id": "sr:competitor:686611", "name": "Walia, Drona", "abbreviation": "WAL", "qualifier": "away", "statistics": {"aces": 2, "breakpoints_won": 2, "double_faults": 3, "first_serve_points_won": 14, "first_serve_successful": 33, "games_won": 3, "max_games_in_a_row": 1, "max_points_in_a_row": 4, "points_won": 39, "second_serve_points_won": 7, "second_serve_successful": 18, "service_games_won": 1, "service_points_lost": 33, "service_points_won": 21, "tiebreaks_won": 0, "total_breakpoints": 6}}
-                            ]
-                        }
-                    }
+          "generated_at": "2025-06-16T01:58:58+00:00",
+          "summaries": [
+            {
+              "sport_event": {
+                "id": "sr:sport_event:61176665",
+                "start_time": "2025-06-16T01:00:00+00:00",
+                "start_time_confirmed": True,
+                "sport_event_context": {
+                  "sport": {"id": "sr:sport:5", "name": "Tennis"},
+                  "category": {"id": "sr:category:2516", "name": "UTR Men"},
+                  "competition": {"id": "sr:competition:47289", "name": "UTR PTT Fukui Men 01", "type": "singles", "gender": "men"},
+                  "season": {"id": "sr:season:131225", "name": "2025 Fukui Men 01", "start_date": "2025-06-16", "end_date": "2025-06-22", "year": "2025", "competition_id": "sr:competition:47289"},
+                  "stage": {"order": 1, "type": "league", "phase": "regular season", "start_date": "2025-06-16", "end_date": "2025-06-20", "year": "2025"},
+                  "round": {"number": 1},
+                  "groups": [{"id": "sr:league:94649", "name": "2025 Fukui Men 01, Group A", "group_name": "Group A"}],
+                  "mode": {"best_of": 3}
+                },
+                "coverage": {
+                  "type": "sport_event",
+                  "sport_event_properties": {"enhanced_stats": False, "scores": "live", "detailed_serve_outcomes": True, "play_by_play": True}
+                },
+                "competitors": [
+                  {"id": "sr:competitor:1213955", "name": "Wakamatsu, Taichi", "country": "Japan", "country_code": "JPN", "abbreviation": "WAK", "qualifier": "home"},
+                  {"id": "sr:competitor:976405", "name": "Taguchi, Ryotaro", "country": "Japan", "country_code": "JPN", "abbreviation": "TAG", "qualifier": "away"}
+                ],
+                "venue": {"id": "sr:venue:83035", "name": "Fukui Sports Park - Court 2", "city_name": "Fukui", "country_name": "Japan", "country_code": "JPN", "timezone": "Asia/Tokyo"},
+                "estimated": False
+              },
+              "sport_event_status": {
+                "status": "live",
+                "match_status": "1st_set",
+                "home_score": 0,
+                "away_score": 0,
+                "period_scores": [
+                  {"home_score": 3, "away_score": 5, "type": "set", "number": 1}
+                ],
+                "game_state": {
+                  "home_score": 30, "away_score": 40, "serving": "home", "last_point_result": "receiver_winner", "tie_break": False, "point_type": "set"
                 }
-            ]
+              },
+              "statistics": {
+                "totals": {
+                  "competitors": [
+                    {
+                      "id": "sr:competitor:1213955", "name": "Wakamatsu, Taichi", "abbreviation": "WAK", "qualifier": "home",
+                      "statistics": {
+                        "aces": 2, "breakpoints_won": 1, "double_faults": 3, "first_serve_points_won": 10, "first_serve_successful": 14, "games_won": 3, "max_games_in_a_row": 1, "max_points_in_a_row": 3, "points_won": 20, "second_serve_points_won": 2, "second_serve_successful": 9, "service_games_won": 2, "service_points_lost": 14, "service_points_won": 12, "tiebreaks_won": 0, "total_breakpoints": 4
+                      }
+                    },
+                    {
+                      "id": "sr:competitor:976405", "name": "Taguchi, Ryotaro", "abbreviation": "TAG", "qualifier": "away",
+                      "statistics": {
+                        "aces": 2, "breakpoints_won": 2, "double_faults": 1, "first_serve_points_won": 15, "first_serve_successful": 18, "games_won": 5, "max_games_in_a_row": 4, "max_points_in_a_row": 9, "points_won": 30, "second_serve_points_won": 7, "second_serve_successful": 5, "service_games_won": 3, "service_points_lost": 8, "service_points_won": 16, "tiebreaks_won": 0, "total_breakpoints": 4
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
         }
 
-    # Mock para la función H2H (ejemplo)
-    def get_head_to_head_stats_mock(id1, id2):
-        # Este mock asume una respuesta simple de la API H2H de Sportradar
-        # ¡AJUSTA ESTO PARA QUE COINCIDA CON LO QUE REALMENTE DEVUELVE TU API H2H!
-        return {
-            "head_to_head": {
-                "home_competitor_id": id1,
-                "away_competitor_id": id2,
-                "home_wins": 3,
-                "away_wins": 1,
-                "total_meetings": 4
-            }
-        }
+    # Deshabilitamos el mock para get_head_to_head_stats ya que no lo usaremos directamente
+    # def get_head_to_head_stats_mock(id1, id2):
+    #     return {"head_to_head": {"home_wins": 0, "away_wins": 0, "total_meetings": 0}}
 
     original_get_live_matches = get_live_matches
-    original_get_head_to_head_stats = get_head_to_head_stats
+    # original_get_head_to_head_stats = get_head_to_head_stats # No se necesita si lo hemos quitado
 
     globals()['get_live_matches'] = get_live_matches_sportradar_mock
-    globals()['get_head_to_head_stats'] = get_head_to_head_stats_mock 
+    # globals()['get_head_to_head_stats'] = get_head_to_head_stats_mock 
 
     state = LiveMatchState()
     state.load_matches()
 
     if state.matches:
-        print("\n✅ Datos del primer partido procesado de Sportradar (con H2H):")
+        print("\n✅ Datos del primer partido procesado de Sportradar (con estadísticas de partido):")
         first_match_obj = state.matches[0]
         print(f"  Torneo: {first_match_obj.TOURNAMENT_NAME} ({first_match_obj.TOURNAMENT_YEAR})")
         print(f"  Partido: {first_match_obj.HOME_NAME} vs {first_match_obj.AWAY_NAME}")
@@ -275,13 +332,23 @@ if __name__ == "__main__":
         print(f"  País Local: {first_match_obj.HOME_COUNTRY}")
         print(f"  País Visitante: {first_match_obj.AWAY_COUNTRY}")
         print(f"  IDs: {first_match_obj.HOME_ID} vs {first_match_obj.AWAY_ID}")
-        print(f"  Set actual: {first_match_obj.CURRENT_SET}, Score set: {first_match_obj.HOME_SCORE_CURRENT_SET}-{first_match_obj.AWAY_SCORE_CURRENT_SET}")
+        print(f"  Set actual: {first_match_obj.CURRENT_SET}, Sets: {first_match_obj.HOME_SCORE_CURRENT_SET}-{first_match_obj.AWAY_SCORE_CURRENT_SET}")
         print(f"  Puntos juego: {first_match_obj.GAME_STATE_HOME_SCORE}-{first_match_obj.GAME_STATE_AWAY_SCORE}, Sirve: {first_match_obj.SERVING_PLAYER}")
-        print(f"  H2H: {first_match_obj.HEAD_TO_HEAD_WINS_HOME}-{first_match_obj.HEAD_TO_HEAD_WINS_AWAY} ({first_match_obj.HEAD_TO_HEAD_TOTAL_MATCHES} partidos)")
-        print(f"  Porcentaje H2H Home: {first_match_obj.HOME_WIN_PERCENTAGE_H2H}%")
-        print(f"  Porcentaje H2H Away: {first_match_obj.AWAY_WIN_PERCENTAGE_H2H}%")
+        print(f"  Porcentaje 1er Saque Ganado Home: {first_match_obj.HOME_FIRST_SERVE_WIN_PERCENTAGE}")
+        print(f"  Porcentaje 1er Saque Ganado Away: {first_match_obj.AWAY_FIRST_SERVE_WIN_PERCENTAGE}")
+        print(f"  Porcentaje Puntos Servicio Ganados Home: {first_match_obj.HOME_SERVICE_POINTS_WIN_PERCENTAGE}")
+        print(f"  Porcentaje Puntos Servicio Ganados Away: {first_match_obj.AWAY_SERVICE_POINTS_WIN_PERCENTAGE}")
+        print(f"  Porcentaje Quiebres Convertidos Home: {first_match_obj.HOME_BREAKPOINT_CONVERSION_PERCENTAGE}")
+        print(f"  Porcentaje Quiebres Convertidos Away: {first_match_obj.AWAY_BREAKPOINT_CONVERSION_PERCENTAGE}")
+        print(f"  Aces: {first_match_obj.HOME_ACES}-{first_match_obj.AWAY_ACES}")
+        print(f"  Breakpoints Ganados: {first_match_obj.HOME_BREAKPOINTS_WON}-{first_match_obj.AWAY_BREAKPOINTS_WON}")
+        print(f"  Dobles Faltas: {first_match_obj.HOME_DOUBLE_FAULTS}-{first_match_obj.AWAY_DOUBLE_FAULTS}")
+        print(f"  Primer Saque Exitoso: {first_match_obj.HOME_FIRST_SERVE_SUCCESSFUL}-{first_match_obj.AWAY_FIRST_SERVE_SUCCESSFUL}")
+        print(f"  Puntos de Servicio Ganados: {first_match_obj.HOME_SERVICE_POINTS_WON}-{first_match_obj.AWAY_SERVICE_POINTS_WON}")
+
     else:
-        print("🚫 No se procesó ningún partido (después de intentar con Sportradar y H2H).")
+        print("🚫 No se procesó ningún partido.")
     
     globals()['get_live_matches'] = original_get_live_matches
-    globals()['get_head_to_head_stats'] = original_get_head_to_head_stats
+    # if 'original_get_head_to_head_stats' in locals(): # Restaura si existía
+    #     globals()['get_head_to_head_stats'] = original_get_head_to_head_stats
